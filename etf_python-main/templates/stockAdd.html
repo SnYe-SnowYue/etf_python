@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- bootstrap css v5.0.2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- bootstrap js v5.0.2 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- web title -->
+    <!-- main css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <!-- main web views strat -->
+    <!-- navbar start -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    {% for item in navbar %}
+                        <a class="nav-link" href="{{ item.url }}">{{ item.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- navbar end -->
+    <!-- container start -->
+    <div class="container mt-3">
+        <!-- 建立一個置中的 row，讓內容在畫面中間 -->
+        <div class="row justify-content-center">
+            <!-- 設定寬度為中等裝置的8欄 -->
+            <div class="col-md-8">
+                <!-- 使用 Bootstrap 卡片元件，增加陰影和無邊框 -->
+                <div class="card shadow-lg border-0">
+                    <!-- 卡片內容，內距加大 -->
+                    <div class="card-body p-4">
+                        <!-- 標題，置中、底部留白、藍色字 -->
+                        <h2 class="text-center mb-4 text-primary">新增多筆股票</h2>
+                        <form id="multiStockForm" action="stockAdd" method="POST">
+                            <!-- 股票輸入區塊的容器，之後會動態新增內容 -->
+                            <div id="stockList">
+                                <!-- 單筆股票輸入區塊（可複製） -->
+                                <div class="stock-item border rounded p-3 mb-4 position-relative bg-light">
+                                    <!-- 刪除按鈕，預設隱藏，只有多筆時才顯示 -->
+                                    <button type="button"
+                                        class="btn-close position-absolute top-0 end-0 m-2 d-none remove-stock"
+                                        aria-label="Close"></button>
+                                    <!-- 股票名稱欄位 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">股票名稱</label>
+                                        <input type="text" class="form-control" name="Name[]" required>
+                                    </div>
+                                    <!-- 股票代號欄位 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">股票代號</label>
+                                        <input type="text" class="form-control" name="Symbol[]" required>
+                                    </div>
+                                    <!-- 持有股數欄位 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">持有股數</label>
+                                        <input type="number" class="form-control" name="Quantity[]" required min="1">
+                                    </div>
+                                    <!-- 買入均價欄位 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">買入均價</label>
+                                        <input type="number" step="any" class="form-control" name="Purchase_price[]"
+                                            required min="0">
+                                    </div>
+                                    <!-- 目前價格欄位 -->
+                                    <div class="mb-3">
+                                        <label class="form-label">目前價格</label>
+                                        <input type="number" step="any" class="form-control" name="Current_price[]"
+                                            required min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 按鈕區塊，左右分布 -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- 新增一筆按鈕，點擊會複製一個輸入區塊 -->
+                                <button type="button" class="btn btn-outline-primary" id="addStockBtn">＋ 新增一筆</button>
+
+                                <a href="stock" class="btn btn-outline-danger">返回</a>
+
+                                <!-- 送出全部按鈕，送出所有股票資料 -->
+                                <button type="submit" class="btn btn-success btn-lg">送出全部</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>                
+            </div>
+        </div>
+    </div>
+    <!-- container end -->
+    <!-- footer start -->
+    <footer class="mt-3 bg-light fixed-bottom">
+        <div class="text-center">{{ footer }}</div>
+    </footer>
+    <!-- footer end -->
+    <!-- main web view end -->
+</body>
+</html>
+<script>
+// 當網頁內容載入完成後，執行裡面的程式
+document.addEventListener('DOMContentLoaded', function() {
+    // 取得存放所有股票輸入區塊的容器（div#stockList）
+    const stockList = document.getElementById('stockList');
+    // 取得「新增一筆」按鈕
+    const addStockBtn = document.getElementById('addStockBtn');
+
+    // 當「新增一筆」按鈕被點擊時，執行這個函式
+    addStockBtn.addEventListener('click', function() {
+        // 找到第一個 .stock-item（作為複製的範本）
+        const firstItem = stockList.querySelector('.stock-item');
+        // 複製這個 .stock-item（包含裡面的所有內容）
+        const newItem = firstItem.cloneNode(true);
+
+        // 把複製出來的輸入欄位都清空（避免帶到舊資料）
+        newItem.querySelectorAll('input').forEach(input => input.value = '');
+
+        // 讓新複製出來的「刪除」按鈕顯示出來（移除 d-none 隱藏 class）
+        newItem.querySelector('.remove-stock').classList.remove('d-none');
+
+        // 幫新複製出來的「刪除」按鈕加上點擊事件
+        newItem.querySelector('.remove-stock').onclick = function() {
+            // 點擊後，移除這個 .stock-item 區塊
+            newItem.remove();
+        };
+
+        // 把新的 .stock-item 加到 stockList 容器的最後面
+        stockList.appendChild(newItem);
+    });
+
+    // 頁面一開始時，讓第一筆的「刪除」按鈕隱藏（避免全部被刪光）
+    const firstRemoveBtn = stockList.querySelector('.remove-stock');
+    firstRemoveBtn.classList.add('d-none');
+});
+</script>
